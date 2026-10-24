@@ -1,136 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name=viewport content='width=700'>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CIF Web Printer</title>
-    <link rel="icon" href="static/cificon.png" type="image/x-icon" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <style>
-        html,
-        body {
-            font-size: 1.25rem;
-            background-color:{{color}};
-        }
-
-        #root {
-            width: fit-content;
-            height: 98vh;
-            margin: 0 auto;
-            padding: 0 1rem;
-            display: flex;
-            flex-flow: column;
-        }
-
-        #header {
-            margin-bottom: 3rem;
-            text-align: center;
-            color:#00ff00;
-            font-family:'Courier new';
-        }
-
-
-        #header>div:first-child {
-            padding-right: 1rem;
-            font-size: 1.75rem;
-        }
-
-        #header>div:nth-child(2) {
-
-            font-size: 1rem;
-            text-overflow: ellipsis;
-        }
-
-        #mainBody {
-            flex: 1;
-        }
-
-
-        input[type='text'],
-        input[type='file'],
-        input[type='number'],
-        input[type='submit'],
-        input[type='password'],
-        select {
-            font-size: 1.0rem;
-            background-color:{{color}};
-            color:white;
-            font-family:'Courier new';
-        }
-
-        #form {
-            display: grid;
-            grid-auto-flow: row;
-            grid-column-gap: .5em;
-            grid-row-gap: 0.5em;
-            grid-template-columns: 1fr 3fr;
-            grid-template-rows: repeat(5, max-content);
-            align-items: center;
-            color:#00ff00;
-            font-family:'Courier new';
-        }
-
-        #form-submit {
-            grid-column: span 2;
-            width: fit-content;
-            margin: 2rem auto;
-            padding: 0.1rem 2rem;
-            background-color:{{color}};
-            color:white;
-        }
-        #footer{
-            font-size: 0.9rem;
-            text-align: center;
-            color:white;
-        }
-    </style>
+    <title>CIF Print Server</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
-
-<!-- ToDo: Inherit from a base template -->
-
 <body>
-    <div id="root" >
-        <div id="header">
-            <div>CIF Web Printer</div>
-            <div>Welcome {{username}}!</div>
-        </div>
-        <div id="mainBody">
-            <form id='form' method='post' enctype=multipart/form-data>
-                <input type="hidden" name="username" id="username" value={{username}}>
-                <label for='file'>File(s):</label>
-                <input type=file name='file' multiple>
-                <label for="pages">Pages:</label>
-                <input type="text" name="pages" id="pages" placeholder="All pages">
-                <label for="copies">Copies:</label>
-                <input type="number" name="copies" value="1" min="1" id="copies">
-                <label for="color">Color:</label>
+<div id="root">
+    <div id="header">
+        <div id="header-title">Computer Interest Floor (CIF)</div>
+    </div>
+
+
+
+
+
+<article class="post">
+    <div class="post-content">
+        <center>
+        <h1>CIF Print Server</h1>
+        <form id="form" action="{{ request.full_path }}" method="POST" style="max-width: 80%;" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="file">File(s):</label>
+            <input type=file name='file' multiple>
+          </div>
+          <div class="form-group">
+            <label for="pages">Pages:</label>
+            <input type="text" name="pages" id="pages" placeholder="All pages">
+          </div>
+          <div class="form-group">
+            <label for="copies">Copies:</label>
+            <input type="number" name="copies" value="1" min="1" id="copies">
+          </div>
+          <div class="form-group">
+            <label for="color">Color:</label>
                 <select name="color" id="color">
                     <option value="Black and White">Black and White</option>
                     <option value="Color">Color</option>
                 </select>
-                <label for="perpage">Pages/sheet:</label>
+          </div>
+          <div class="form-group">
+            <label for="perpage">Pages/sheet:</label>
                 <input type="number" name="perpage" value="1" min="1" id="perpage">
-                <label for="orientation">Layout:</label>
+          </div>
+          <div class="form-group">
+            <label for="orientation">Layout:</label>
                 <select name="orientation" id="orientation">
                     <option value="Portrait">Portrait</option>
                     <option value="Landscape">Landscape</option>
                 </select>
-                <input id="form-submit" name='submit-button' type=submit value=Print>
-            </form>
-        </div>
-
-
-        <div id="footer">
-            <div id="add">
-                Github: <a href="https://github.com/CIF-Rochester/print-server"><i
-                        class="fa fa-github" style="font-size:24px"></i></a>
-            </div>
-        </div>
+          </div>
+          <div class="form-group">
+            <label for="sided">Sides:</label>
+                <select name="sided" id="sided">
+                    <option value="Single Sided">Double Sided</option>
+                    <option value="Double Sided">Single Sided</option>
+                </select>
+          </div>
+          <div class="error">{{error}}</div>
+          <button class="btn" id="print_button">Verify</button>
+            <dialog id="popup">
+                <h2 id="line1"></h2>
+                <h2 id="line2"></h2>
+                <button id="cancel" class="btn">Cancel</button>
+                <button id="confirm" class="btn">Print</button>
+            </dialog>
+        </form>
+	</center>
     </div>
-    </div>
+</article>
 
+
+    <div id="footer">
+        <div><a href="http://print.cif.rochester.edu/points">Questions about printing points?</a></div>
+        Computer Interest Floor @ University of Rochester<br>
+    </div>
+</div>
 </body>
+<script>
+    function muteButton(event){
+        event.preventDefault();
+    }
+    const popup = document.getElementById("popup");
+    const print_button = document.getElementById("print_button");
+    const cancel = document.getElementById("cancel");
+    const form = document.getElementById("form");
+    print_button.addEventListener("click", function(event){
+        event.preventDefault();
+        print_button.textContent = "Verifying";
+        print_button.addEventListener('click', muteButton);
+        fetch("/check-print?username={{username}}", {method: "POST", body: new FormData(form)}).then(response => {
+            response.json().then(data => {
+                const line1 = document.getElementById("line1");
+                const line2 = document.getElementById("line2");
+                const confirm = document.getElementById("confirm");
+                if (response.status == 200){
+                    line1.style.color = "#ffffff";
+                    line1.textContent = "Total Points: " + data["total"];
+                    line2.style.color = "#ffffff";
+                    line2.textContent = "Points Spent: " + data["points"];
+                    confirm.removeEventListener("click", muteButton);
+                    confirm.style.visibility = "visible";
+                } else {
+                    line1.style.color = "#ff0000";
+                    line1.textContent = data["error"];
+                    line2.style.color = "#ff0000";
+                    line2.textContent = Object.hasOwn(data, "error2")? data["error2"]:"";
+                    confirm.addEventListener("click", muteButton);
+                    confirm.style.visibility = "hidden";
+                }
+                popup.showModal();
+                print_button.textContent = "Verify";
+                print_button.removeEventListener("click", muteButton);
+            }
+            );
+        });
+    });
+    cancel.addEventListener('click', function(event){
+        event.preventDefault();
+        popup.close();
+    });
+</script>
 </html>

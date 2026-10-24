@@ -1,193 +1,335 @@
-/* Make the size of elements make sense */
-* {
-  box-sizing: border-box;
-  font-family: "Source Sans Pro", "Verdana", "Helvetica Neue", "Arial", sans-serif;
+html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background-color: #0f0f0f;
+    color: #ffffff;
+    font-size: 18px;
+    font-family: "Courier New", Courier, monospace;
+    line-height: 1.6;
 }
 
-/* Remove padding in body element */
-body {
-  padding: 0;
-  margin: 0;
-  font-family: sans-serif;
-  background-color: #323031;
-  color: white;
+#root {
+width: 90%;
+max-width: 980px;
+margin: 0 auto;
+padding: 30px 20px;
 }
 
-.bodyoffset {
-  margin-left: 1%;
+#header {
+margin-bottom: 25px;
+text-align: center;
+color: #00ff00;
 }
 
-/* Add a black background color to the top navigation */
-.topnav {
-  background-color: #2A7E46;
-  overflow: hidden;
-  line-height: 2em;
-  padding-left: 1%;
-  padding-right: 1%;
-  padding-bottom: 0;
+#header-title {
+font-size: 1.8rem;
+font-weight: bold;
+margin-bottom: 5px;
 }
 
-.topnav ul {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
+#header-subtitle {
+color: #bbbbbb;
+font-size: 1rem;
 }
 
-/* Style the links inside the navigation bar */
-.topnav li a {
-  float: right;
-  display: block;
-  color: black;
-  text-align: center;
-  padding: 14px 16px;
-  text-decoration: none;
+a {
+    color: #00ff00;
+    font-weight: bold;
 }
 
-/* Change the color of links on hover */
-.topnav li a:hover {
-  background-color: white;
-  color: black;
+.nav-bar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    border-bottom: 2px solid #006600;
+    padding-bottom: 12px;
 }
 
-/* Add a color to the active/current link */
-.topnav li a.active {
-  background-color: white;
-  color: black;
+.nav-link {
+    color: #777777;
+    text-decoration: none;
+    padding: 8px 16px;
+    border: 1px solid #333333;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
 }
 
-/* Reducing size of CIF logo */
-.topnav li img {
-  display: block;
-  align-items: center;
-  height: 60px;
-  width: 60px;
-  float: left;
+.nav-link:hover {
+    color: #00ff00;
+    border-color: #006600;
 }
 
-.grid-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+.nav-link.active {
+    background-color: #00ff00;
+    color: #0f0f0f;
+    border-color: #00ff00;
 }
 
-.grid-item {
-  justify-items: center;
+.post {
+    margin-bottom: 35px;
+    padding: 25px 30px;
+    background-color: #151515;
+    border: 2px solid #00ff00;
+    border-radius: 24px;
+    corner-shape: squircle;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
 }
 
-.homepageheader {
-  font-size: 5.05em;
-  font-weight: bold;
-  text-align: center;
-  grid-column: 2 / 3;
-  margin-left: 21.3%;
-  margin-right: 21.3%;
-  margin-top: 10%;
+.post-date {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    color: #00ff00;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #006600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.homepagetext {
-  font-size: 2em;
-  font-weight: 600;
-  text-align: left;
-  margin-left: 21.3%;
-  margin-right: 21.3%;
+.error {
+    display: block;
+    color: #ff0000;
+    font-weight: bold;
+    margin-bottom: 8px;
+    margin-top: 8px;
+    font-size: 0.95rem;
 }
 
-.printheaderdiv {
-  margin-top: 4%;
+dialog {
+    padding: 25px 30px;
+    background-color: #151515;
+    border: 2px solid #00ff00;
+    border-radius: 24px;
+    corner-shape: squircle;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
 }
 
-.printselectbuttons {
-  margin-top: 5%;
+dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
-.buttonimg {
-  height: 65%;
-  width: 60%;
-  padding-bottom: 0%;
-  align-items: center;
-  justify-content: center;
+h1, h2, h3, h4 {
+    color: #00ff00;
+    line-height: 1.3;
+    margin-top: 0;
 }
 
-.blockleft {
-  border: none;
-  padding: 28px 28px;
-  font-size: 28px;
-  cursor: pointer;
-  border-radius: 8px;
-  transition-duration: 0.4s;
-  border: 2px solid black;
-  width: 15%;
-  height: 15%;
-  block-size: 5%;
-  margin-right: 7%;
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
 }
 
-.blockleft:hover {
-  background-color: #2A7E46;
-  color: white;
+.form-group {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
-.blockleft:focus {
-  background-color: #2A7E46;
-  color: white;
+.form-group.full-width {
+    grid-column: span 2;
 }
 
-.blockright {
-  border: none;
-  padding: 28px 28px;
-  font-size: 28px;
-  cursor: pointer;
-  border-radius: 8px;
-  transition-duration: 0.4s;
-  border: 2px solid black;
-  width: 15%;
-  height: 15%;
-  block-size: 5%;
-  margin-left: 7%;
+.form_row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    width: 100%;
 }
 
-.blockright:hover {
-  background-color: #2A7E46;
-  color: white;
+label {
+    display:inline- block;
+    color: #ffffff;
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    width: 140px;
+    flex-shrink: 0;
 }
 
-.blockright:focus {
-  background-color: #2A7E46;
-  color: white;
+input, select {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: #000000;
+    border: 1px solid #006600;
+    border-radius: 8px;
+    color: #ffffff;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 1rem;
+    box-sizing: border-box;
+    outline: none;
 }
 
-.buttoncenter {
-  background-color: #2A7E46;
-  border: none;
-  font-size: 20px;
-  padding: 10px 24px;
-  text-align: center;
-  border-radius: 4px;
-  cursor: pointer;
-  position: absolute;
-  bottom: 15%;
-  right: 47%;
+input:focus {
+    border-color: #00ff00;
+    box-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
 }
 
-.acknowledgement {
-  text-align: center;
-  margin-top: 5.5%;
-  font-size: 1.2em;
+.checkbox-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    background-color: #0a0a0a;
+    padding: 15px;
+    border: 1px dashed #006600;
+    border-radius: 12px;
 }
 
-.formlayout {
-  position: absolute;
-  top: 19%;
-  line-height: 200%;
+.checkbox-container input {
+    margin-top: 5px;
+    accent-color: #00ff00;
+    width: 18px;
+    height: 18px;
 }
 
-.printbutton {
-  position: absolute;
-  top: 100%;
-  background-color: #2A7E46;
-  text-align: center;
-  border-radius: 4px;
-  font-size: 16px;
-  padding: 10px 24px;
+.alert-success-box {
+    background-color: rgba(0, 50, 0, 0.75);
+    border: 2px solid #00ff00;
+    color: #00ff00;
+    padding: 22px 25px;
+    border-radius: 20px;
+    corner-shape: squircle;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 20px 0 30px 0;
+}
+
+.alert-error-box {
+    background-color: rgba(60, 0, 0, 0.85);
+    border: 2px solid #ff3333;
+    color: #ff6666;
+    padding: 18px 22px;
+    border-radius: 16px;
+    text-align: center;
+    font-size: 1rem;
+    margin: 20px 0 25px 0;
+  /*  box-shadow: 0 0 15px rgba(255, 51, 51, 0.3);*/
+}
+
+.btn {
+    display: inline-block;
+    background-color: #00ff00;
+    color: #0f0f0f;
+    padding: 10px 22px;
+    font-family: "Courier New", Courier, monospace;
+    font-weight: bold;
+    font-size: 0.95rem;
+    border: none;
+    border-radius: 12px;
+    corner-shape: squircle; /* Native squircle when supported */
+    cursor: pointer;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-action-approve {
+    background-color: #00ff00;
+    color: #0f0f0f;
+    padding: 7px 15px;
+    font-size: 0.82rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 10px;
+    corner-shape: squircle;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.18s ease;
+}
+
+.btn-action-deny {
+    background-color: #ff3333;
+    color: #ffffff;
+    padding: 7px 15px;
+    font-size: 0.82rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 10px;
+    corner-shape: squircle;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.18s ease;
+}
+
+.table-container {
+    overflow-x: auto;
+    margin-top: 15px;
+}
+
+table.admin-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.88rem;
+    background-color: #0b0b0b;
+    border: 1px solid #006600;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+table.admin-table th {
+    color: #00ff00;
+    background-color: #121212;
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-bottom: 2px solid #006600;
+}
+
+table.admin-table td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid #1c1c1c;
+    vertical-align: middle;
+}
+
+table.admin-table tr:nth-child(even) td {
+    background-color: #0f0f0f;
+}
+
+table.admin-table tr:nth-child(odd) td {
+    background-color: #141414;
+}
+
+table.admin-table tr:hover td {
+    background-color: #1e261e;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 8px;
+    corner-shape: squircle;
+    font-size: 0.75rem;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.badge-pending { background-color: #3b2a00; color: #ffcc00; border: 1px solid #aa8800; }
+.badge-approved { background-color: #003800; color: #00ff00; border: 1px solid #00aa00; }
+.badge-denied { background-color: #380000; color: #ff5555; border: 1px solid #aa0000; }
+
+#footer {
+margin-top: 50px;
+padding-top: 20px;
+color: #777777;
+border-top: 1px solid #333333;
+text-align: center;
+font-size: 0.8rem;
+}
+
+@media screen and (max-width: 700px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.full-width { grid-column: span 1; }
+    #root { width: 95%; padding: 15px 5px; }
 }

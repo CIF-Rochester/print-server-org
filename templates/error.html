@@ -1,126 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name=viewport content='width=700'>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CIF Web Printer</title>
-    <link rel="icon" href="static/cificon.png" type="image/x-icon" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <style>
-        html,
-        body {
-            font-size: 1.25rem;
-            background-color:{{color}};
-        }
-
-        #root {
-            width: fit-content;
-            height: 98vh;
-            margin: 0 auto;
-            padding: 0 1rem;
-            display: flex;
-            flex-flow: column;
-        }
-
-        #header {
-            margin-bottom: 3rem;
-            text-align: center;
-            color:#00ff00;
-            font-family:'Courier new';
-        }
-
-
-        #header>div:first-child {
-            padding-right: 1rem;
-            font-size: 1.75rem;
-        }
-
-        #header>div:nth-child(2) {
-
-            font-size: 1rem;
-            text-overflow: ellipsis;
-        }
-
-        #mainBody {
-            flex: 1;
-            color:white;
-            font-family: 'Courier new';
-        }
-
-
-        input[type='text'],
-        input[type='file'],
-        input[type='number'],
-        input[type='submit'],
-        input[type='password'],
-        select {
-            font-size: 1.0rem;
-            background-color:{{color}};
-            color:white;
-            font-family:'Courier new';
-        }
-
-        #form {
-            display: grid;
-            grid-auto-flow: row;
-            grid-column-gap: .5em;
-            grid-row-gap: 0.5em;
-            grid-template-columns: 1fr 3fr;
-            grid-template-rows: repeat(5, max-content);
-            align-items: center;
-            color:#00ff00;
-            font-family:'Courier new';
-        }
-
-        #form-submit {
-            grid-column: span 2;
-            width: fit-content;
-            margin: 2rem auto;
-            padding: 0.1rem 2rem;
-            background-color:{{color}};
-            color:white;
-        }
-        #footer{
-            font-size: 0.9rem;
-            text-align: center;
-            color:white;
-        }
-    </style>
+    <title>CIF Print Server</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
-
 <body>
-
-
-    <div id="root" >
-        <div id="header">
-            <div>CIF Web Printer</div>
-        </div>
-        <div id="mainBody" style="text-align: center;">
-            <div>Unable to submit print job</div>
-            <div>
-                {{error}}
-            </div>
-            <div>
-                If this result is unexpected, please create an issue <a href="https://github.com/CIF-Rochester/print-server/issues/new" style="">here</a>
-            </div>
-            <form id='form' method=post enctype=multipart/form-data>
-                <input type="hidden" name="username" id="username" value={{username}}>
-                <input id="form-submit" name='submit-button' type=submit value="Return to Home">
-            </form>
-        </div>
-
-
-        <div id="footer">
-            <div id="add">
-                Github: <a href="https://github.com/CIF-Rochester/print-server"><i
-                        class="fa fa-github" style="font-size:24px"></i></a>
-            </div>
-        </div>
-    </div>
+<div id="root">
+    <div id="header">
+        <div id="header-title">Computer Interest Floor (CIF)</div>
     </div>
 
+
+
+
+
+<article class="post">
+    <div class="post-content">
+        <h1>CIF Print Server</h1>
+        <h2 style="color:#ff0000">{{ error.replace('\n', '<br>') | safe }}</h2>
+        <form id="form" action="{{ home_url }}" method="GET" style="max-width: 450px;">
+            <input type="hidden" name="username" value="{{ request.args.get('username') }}">
+            <input type="hidden" name="d" value="{{ request.args.get('d') }}">
+            <button class="btn">Return to Home Page</button>
+        </form>
+    </div>
+</article>
+
+
+    <div id="footer">
+        Computer Interest Floor @ University of Rochester<br>
+    </div>
+</div>
 </body>
 </html>
