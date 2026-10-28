@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - CIF Org Printer</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div id="root" style="max-width:none;">
+    <div id="header">
+        <div id="header-title">Computer Interest Floor (CIF)</div>
+    </div>
+
+
+
+
+
+<article class="post" style="width: fit-content">
+    <div class="post-date">
+        <span>Dashboard</span>
+        <span>Logged in as: {{ request.args.get('username') }}</span>
+    </div>
+    <div class="post-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 style="margin: 0;">Print Records</h1>
+        </div>
+
+        <div class="table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Print ID</th>
+                        <th>Org Name</th>
+                        <th>OrgID</th>
+                        <th>Email</th>
+                        <th>File</th>
+                        <th>Pages</th>
+                        <th>Copies</th>
+                        <th>Color</th>
+                        <th>Pages/sheet</th>
+                        <th>Layout</th>
+                        <th>Sides</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for print in jobs %}
+                         <tr>
+                        <td><strong>{{ print.id if print.first else "" }}</strong></td>
+                        <td><strong>{{ print.org if print.first else ""}}</strong></td>
+                        <td><code>{{ print.org_id if print.first else ""}}</code></td>
+                        <td>{{ print.email if print.first else ""}}</td>
+                             <td><a href="/download/{{ print.id }}/{{ print.file }}{{ request.full_path[6:] | safe }}">{{ print.file.split('---')[-1] }}</a></td>
+                             <td>{{ print.pages }}</td>
+                             <td>{{ print.copies }}</td>
+                             <td>{{ print.color }}</td>
+                             <td>{{ print.per_page }}</td>
+                             <td>{{ print.ornt }}</td>
+                             <td>{{ print.sided }}</td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <form action="/print?username={{ request.args.get('username') }}&d={{ request.args.get('d') }}&id={{ print.id }}&file={{print.file}}" method="POST" style="display: inline;">
+                                    <input type="hidden" name="status" value="APPROVED">
+                                    <button type="submit" class="btn-action-approve">Print</button>
+                                </form>
+                                <form action="/complete?username={{ request.args.get('username') }}&d={{ request.args.get('d') }}&id={{ print.id }}&file={{print.file}}" method="POST" style="display: inline;">
+                                    <input type="hidden" name="status" value="APPROVED">
+                                    <button type="submit" class="btn-action-approve">Mark Complete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</article>
+
+
+    <div id="footer">
+        Computer Interest Floor @ University of Rochester<br>
+    </div>
+</div>
+</body>
+</html>

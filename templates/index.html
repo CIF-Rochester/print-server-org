@@ -54,13 +54,16 @@
           <div class="form-group">
             <label for="sided">Sides:</label>
                 <select name="sided" id="sided">
-                    <option value="Single Sided">Double Sided</option>
-                    <option value="Double Sided">Single Sided</option>
+                    <option value="Double Sided">Double Sided</option>
+                    <option value="Single Sided">Single Sided</option>
                 </select>
           </div>
           <div class="error">{{error}}</div>
           <button class="btn" id="print_button">Verify</button>
             <dialog id="popup">
+                <h2 style="color: #ffff00;" id="warning">This job exceeds the immediate print threshold.<br>CIF will notify you when your print is ready.</h2>
+                <table id="summary_table">
+                </table>
                 <h2 id="line1"></h2>
                 <h2 id="line2"></h2>
                 <button id="cancel" class="btn">Cancel</button>
@@ -86,6 +89,7 @@
     const print_button = document.getElementById("print_button");
     const cancel = document.getElementById("cancel");
     const form = document.getElementById("form");
+    const tableHeader = "<tr><th class=\"cell\">Name</th><th class=\"cell\">Pages</th><th class=\"cell\">Color</th><th class=\"cell\">Double Sided</th><th class=\"cell\">Price</th></tr>"
     print_button.addEventListener("click", function(event){
         event.preventDefault();
         print_button.textContent = "Verifying";
@@ -94,21 +98,43 @@
             response.json().then(data => {
                 const line1 = document.getElementById("line1");
                 const line2 = document.getElementById("line2");
+                const summaryTable = document.getElementById("summary_table");
                 const confirm = document.getElementById("confirm");
+                const warning = document.getElementById("warning");
                 if (response.status == 200){
                     line1.style.color = "#ffffff";
-                    line1.textContent = "Total Points: " + data["total"];
-                    line2.style.color = "#ffffff";
-                    line2.textContent = "Points Spent: " + data["points"];
+                    var innerHTML = tableHeader;
+                    const summary = data["summary"];
+                    console.log(summary);
+                    for (let i = 0; i < summary.length; i++){
+                        innerHTML += "<tr><td class=\"cell\">" + summary[i]["name"] + "</td><td class=\"cell\">" + summary[i]["pages"] + "</td><td class=\"cell\">" + summary[i]["color"] + "</td><td class=\"cell\">" + summary[i]["double_sided"] + "</td><td class=\"cell\">$" + summary[i]["price"] + "</td></tr>";
+                    }
+                    summaryTable.style.visibility = "visible";
+                    summaryTable.innerHTML = innerHTML;
+                    line1.style.color = "#ffffff";
+                    line1.textContent = "Money Saved: $" + (data["univ_price"] - data["price"]);
+                    line2.style.color = "#00ff00";
+                    line2.textContent = "Total: $" + data["price"];
                     confirm.removeEventListener("click", muteButton);
                     confirm.style.visibility = "visible";
+                    if (data["immediate"]){
+                        confirm.textContent = "Print";
+                        warning.style.visibility = "hidden";
+                        form.action = "{{ request.full_path | safe}}";
+                    } else {
+                        confirm.textContent = "Submit";
+                        warning.visibility = "visible";
+                        form.action = "/submit-print{{ request.full_path[6:] | safe }}&cost=" + data["price"];
+                    }
                 } else {
+                    warning.visibility = "hidden";
                     line1.style.color = "#ff0000";
                     line1.textContent = data["error"];
                     line2.style.color = "#ff0000";
                     line2.textContent = Object.hasOwn(data, "error2")? data["error2"]:"";
                     confirm.addEventListener("click", muteButton);
                     confirm.style.visibility = "hidden";
+                    summaryTable.style.visibility = "hidden";
                 }
                 popup.showModal();
                 print_button.textContent = "Verify";

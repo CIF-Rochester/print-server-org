@@ -165,6 +165,17 @@ input, select {
     outline: none;
 }
 
+table {
+    color: #ffffff;
+    margin-bottom: 15px;
+}
+
+th, td {
+    text-align: center;
+    padding: 15px;
+}
+
+
 input:focus {
     border-color: #00ff00;
     box-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
