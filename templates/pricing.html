@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CIF Print Server</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div id="root">
+    <div id="header">
+        <div id="header-title">Computer Interest Floor (CIF)</div>
+    </div>
+<article class="post">
+    <div class="post-content">
+        <h1>Pricing</h1>
+<p>The Computer Interest Floor understands that printing is expensive.  Our goal here at CIF is to provide reasonably priced printing to the university community.</p>
+
+<h3>Standard Print Costs per Sheet</h3>
+<ul>
+	<li>Single-sided B&W: {{single_bw}}¢</li>
+	<li>Single-sided Color: {{single_color}}¢</li>
+	<li>Double-sided B&W: {{double_bw}}¢</li>
+	<li>Double-sided Color: {{double_color}}¢</li>
+</ul>
+<p>CIF also offers a "premium" print quality.  As premium printing is far less cost efficient, a {{premium_mul}}x multiplier is applied to any premium prints.</p>
+<h3>Picking up Prints</h3>
+<p>If a print job under {{ threshold }} pages is submitted, it be printed immediately.  You may pick it up anytime in Anderson B031</p>
+        <p>In the interest of maintaining printing availability for both other organizations and our own members, prints above this threshold require approval and oversight from CIF System Admins.  You will be notified when your print is complete.</p>
+</div>
+</article>
+    <div id="footer">
+        <div><a href="{{request.host_url}}">Submit print</a></div>
+        Computer Interest Floor @ University of Rochester<br>
+    </div>
+</div>
+</body>
+</html>

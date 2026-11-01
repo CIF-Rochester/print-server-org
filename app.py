@@ -75,13 +75,17 @@ def encrypt_password(password):
 def decrypt_password(e_password):
     return decrypt_string(e_password, get_mac_address())
 
-def print_file(username, file, copies, pages, per_page, color, ornt, sided):
-    if color == 'Black and White':
-        command = f"lpr -o print-scaling=none -#{copies} -o media=letter -o fit-to-page -o number-up={per_page} -P {config.printer.bw_printer_name} -o Ink=MONO"
+def print_file(username, premium, file, copies, pages, per_page, color, ornt, sided):
+    command = f"lpr -o print-scaling=none -#{copies} -o media=letter -o fit-to-page -o number-up={per_page}"
+    if premium == 'Premium':
+        if color == 'Black and White':
+            command += f" -o {config.printer.premium_bw_option}"
+        command += f" -P {config.printer.premium_printer}"
     else:
-        command = f"lpr -o print-scaling=none -#{copies} -o media=letter -o fit-to-page -o number-up={per_page} -P {config.printer.color_printer_name}"
+        if color == 'Black and White':
+            command += f" -o {config.printer.standard_bw_option}"
     if pages:
-        command += f" -o pages-ranges={pages}"
+        command += f" -o page-ranges={pages}"
     if ornt == 'Landscape':
         command += f" -o orientation-requested=4"
     if sided == 'Double Sided':
@@ -89,7 +93,7 @@ def print_file(username, file, copies, pages, per_page, color, ornt, sided):
             command += f" -o sides=two-sided-short-edge"
         else:
             command += f" -o sides=two-sided-long-edge"
-#    command += f" {file}"
+    command += f" {file}"
     logger.info(f"Running command \"{command}\"")
     err = ""
 #    err = subprocess.run(command, shell=True, stderr=subprocess.PIPE).stderr.decode('utf-8')
@@ -211,7 +215,7 @@ def get_num_pages_printed(file, copies, pages, per_page, sided):
         num_pages /= 2
     return math.ceil(num_pages)
 
-def get_print_price(file, color, pages, per_page, copies, sided):
+def get_print_price(file, premium, color, pages, per_page, copies, sided):
     price = get_num_pages_printed(file, copies, pages, per_page, sided)
     if color == 'Color':
         price *= config.print_prices.color_page
@@ -219,6 +223,8 @@ def get_print_price(file, color, pages, per_page, copies, sided):
         price *= config.print_prices.bw_page
     if sided == 'Double Sided':
         price *= config.print_prices.double_sided_multiplier
+    if premium == 'Premium':
+        price *= config.print_prices.premium_multiplier
     return price
 
 def get_univ_print_price(file, color, pages, per_page, copies, sided):
@@ -233,6 +239,7 @@ def check_params():
     pages = request.form.get('pages').replace(" ", "")
     if pages and not pages == 'All Pages' and parse_pages(pages) is None:
         return jsonify({"error": "Unable to parse field \"Pages\""}), 400
+    premium = request.form.get('premium')
     color = request.form.get('color')
     ornt = request.form.get('orientation')
     per_page = int(request.form.get('perpage'))
@@ -266,15 +273,16 @@ def check_params():
         file_summary = {'name': file.split('/')[-1].split('---')[-1], 'pages': get_num_pages_printed(file, copies, pages, per_page, sided)}
         file_summary['color'] = 'Yes' if color == 'Color' else 'No'
         file_summary['double_sided'] = 'Yes' if sided == 'Double Sided' else 'No'
-        file_cost = get_print_price(file, color, pages, per_page, copies, sided)
+        file_summary['quality'] = premium
+        file_cost = get_print_price(file, premium, color, pages, per_page, copies, sided)
         total_pages += get_num_pages_printed(file, copies, pages, per_page, sided)
         file_summary['price'] = file_cost
         price += file_cost
         univ_price += get_univ_print_price(file, color, pages, per_page, copies, sided)
         summary.append(file_summary)
     price = int(100 * price) / 100.0
-    univ_price = math.ceil(100 * univ_price) / 100.0
-    job = {"username": username, "files": [file.split('/')[-1] for file in files], "pages": pages, "color": color, "ornt": ornt, "per_page": per_page, "copies": copies, "sided": sided}
+    univ_price = round(100 * univ_price) / 100.0
+    job = {"username": username, "premium": premium, "files": [file.split('/')[-1] for file in files], "pages": pages, "color": color, "ornt": ornt, "per_page": per_page, "copies": copies, "sided": sided}
     with open(f"{BASE_DIR}/tmp/{username}/print-job", 'w') as f:
         f.write(json.dumps(job))
     return jsonify({"price": price, "univ_price": univ_price, "immediate":total_pages <= config.print_prices.immediate_print_threshold,'summary':summary}), 200
@@ -336,6 +344,10 @@ def submit_print():
     os.rmdir(f"{BASE_DIR}/tmp/{username}")
     return render_template('success.html', home_url=f"/print?username={username}&d={encrypt_password(password)}")
 
+@app.route('/pricing', methods=['GET'])
+def get_pricing():
+    return render_template('pricing.html', single_bw=round(100 * config.print_prices.bw_page), single_color=round(100 * config.print_prices.color_page), double_bw=round(100 * config.print_prices.double_sided_multiplier * config.print_prices.bw_page), double_color=round(100 * config.print_prices.double_sided_multiplier * config.print_prices.color_page), premium_mul = config.print_prices.premium_multiplier, threshold=config.print_prices.immediate_print_threshold)
+
 @app.route('/print', methods=['GET', 'POST'])
 def get_main_page():
     if not "username" in request.args or not "d" in request.args:
@@ -349,7 +361,6 @@ def get_main_page():
     else:
         if "id" in request.args and "file" in request.args:
             ipa_server.login(config.ipa.username, config.ipa.password)
-            user = ipa_server.user_find(o_uid=username)['result'][0]
             if not authenticate_admin(username, password):
                 return redirect(f"/admin")
             id = int(request.args.get('id'))
@@ -357,7 +368,7 @@ def get_main_page():
             with open(f"{BASE_DIR}/queue/{id}/print-job", 'r') as f:
                 job = json.loads(f.read())
             file = update_queue_storage(id, file)
-            err = print_file(username, file, job["copies"], job["pages"], job["per_page"], job["color"], job["ornt"], job["sided"])
+            err = print_file(username, job["premium"], file, job["copies"], job["pages"], job["per_page"], job["color"], job["ornt"], job["sided"])
             if err:
                 return render_template('error.html', home_url=request.full_path, error=err)
             if len(os.listdir(f"{BASE_DIR}/queue/{id}")) <= 1:
@@ -371,6 +382,7 @@ def get_main_page():
             return redirect(f"/admin?username={username}&d={encrypt_password(password)}")
         else:
             pages = request.form.get('pages').replace(" ", "")
+            premium = request.form.get('premium')
             color = request.form.get('color')
             ornt = request.form.get('orientation')
             per_page = int(request.form.get('perpage'))
@@ -383,18 +395,16 @@ def get_main_page():
             with open(f"{BASE_DIR}/tmp/{username}/print-job", 'r') as f:
                 job_check = json.loads(f.read())
             for file in files:
-                if not '.'.join(file.split('/')[-1]) in job_check["files"]:
+                if not file.split('/')[-1] in job_check["files"]:
                     return render_template('error.html', error="Print job does not match verified print settings",home_url=request.full_path)
-            if job_check["pages"] != pages or job_check["color"] != color or job_check["ornt"] != ornt or job_check["per_page"] != per_page or job_check["copies"] != copies or job_check["sided"] != sided:
+            if job_check['premium'] != premium or job_check["pages"] != pages or job_check["color"] != color or job_check["ornt"] != ornt or job_check["per_page"] != per_page or job_check["copies"] != copies or job_check["sided"] != sided:
                 return render_template('error.html', error="Print job does not match verified print settings", home_url=request.full_path)
             errs = ""
             for file in files:
-                return_err = print_file(username, file, copies, pages, per_page, color, ornt, sided)
+                return_err = print_file(username, premium, file, copies, pages, per_page, color, ornt, sided)
                 if return_err:
                     errs += file.split('/')[-1]
                     errs += "\n"
-                else:
-                    subtract_user_points(username, get_points_spent(file, color, pages, per_page, copies, sided))
             if len(errs) > 0:
                 error_output = f"The following files failed to print.  Points have not been deducted.\n{errs}"
                 return render_template('error.html', home_url=request.full_path, error=error_output)
