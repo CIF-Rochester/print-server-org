@@ -57,7 +57,8 @@ def get_mac_address():
 def authenticate(username, password):
     try:
         ipa_server.login(username, password)
-        return True
+        user = ipa_server.user_find(o_uid=username)['result'][0]
+        return 'admins' in user['memberof_group'] or 'student_org' in user['memberof_group']
     except Unauthorized:
         return False
 
@@ -84,6 +85,7 @@ def print_file(username, premium, file, copies, pages, per_page, color, ornt, si
     else:
         if color == 'Black and White':
             command += f" -o {config.printer.standard_bw_option}"
+        command += f" -P {config.printer.standard_printer}"
     if pages:
         command += f" -o page-ranges={pages}"
     if ornt == 'Landscape':
@@ -96,7 +98,7 @@ def print_file(username, premium, file, copies, pages, per_page, color, ornt, si
     command += f" {file}"
     logger.info(f"Running command \"{command}\"")
     err = ""
-#    err = subprocess.run(command, shell=True, stderr=subprocess.PIPE).stderr.decode('utf-8')
+    err = subprocess.run(command, shell=True, stderr=subprocess.PIPE).stderr.decode('utf-8')
     if not pages:
         pages = 'ALL'
     log_output = f"{username} - File: {file.split('/')[-1]}  Copies:{copies} Pages:{pages} Pages/sheet:{per_page} Color:{color} Orientation:{ornt} Sided:{sided}"
@@ -493,4 +495,4 @@ if __name__ == '__main__':
     threading.Thread(daemon=True).start()
     thread = threading.Thread(target=scheduler)
     thread.start()
-    app.run(host='0.0.0.0', port=5000,debug=False)
+    app.run(host='0.0.0.0', port=5001,debug=False)
