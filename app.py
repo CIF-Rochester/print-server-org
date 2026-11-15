@@ -18,6 +18,9 @@ import math
 import subprocess
 import mariadb
 import schedule
+import smtplib
+from email.message import EmailMessage
+import mimetypes
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DEFAULT_CFG_PATH = os.path.join(BASE_DIR, "config.cfg")
@@ -54,11 +57,91 @@ def get_mac_address():
     mac_str = ':'.join(['{:02x}'.format((mac_num >> ele) & 0xff) for ele in range(0, 8 * 6, 8)][::-1])
     return mac_str
 
+def send_org_notification(name, receiver,immediate):
+    msg = EmailMessage()
+    msg["From"] = "soap-print@cif.rochester.edu"
+    msg["To"] = receiver
+    msg["Subject"] = "Print Submission Received"
+    if immediate:
+        msg.set_content(f"""
+Dear {name},
+Thank you for submitting your prints through the Computer Interest Floor!  As your print was relatively small, it can be picked up immediately in Anderson B031.
+
+If you do not have access to this space, you may apply for access at http://account.cif.rochester.edu or reach out to us at urcomputerinterestfloor@gmail.com.
+
+You will receive an invoice at the end of the week.
+
+Regards,
+Computer Interest Floor""")
+    else:
+        msg.set_content(f"""
+Dear {name},
+Thank you for submitting your prints through the Computer Interest Floor!  Your prints have been queued and a member of the CIF Tech Team will get back to you shortly.
+
+You will receive an invoice at the end of the week.
+
+Regards,
+Computer Interest Floor""")
+    try:
+        with smtplib.SMTP("hermes-vm.cif.rochester.edu", 25) as server:
+            server.send_message(msg)
+        print("Successfully sent email")
+    except smtplib.SMTPException as e:
+        print(e)
+        print("Error: unable to send email")
+
+def send_board_notification(name, immediate):
+    msg = EmailMessage()
+    msg["From"] = "soap-print@cif.rochester.edu"
+    msg["To"] = "cif_board@u.rochester.edu"
+    msg["Subject"] = "Print Submission Received"
+    if immediate:
+        msg.set_content(f"""
+A new print job has been submitted by {name}.  As the print job was under 30 pages, it has been immediately processed.
+""")
+    else:
+        msg.set_content(f"""
+A new print job has been submitted and queued by {name}.  Queued print jobs can be managed at http://print.soap.rochester.edu/admin""")
+    try:
+        with smtplib.SMTP("hermes-vm.cif.rochester.edu", 25) as server:
+            server.send_message(msg)
+        print("Successfully sent email")
+    except smtplib.SMTPException as e:
+        print(e)
+        print("Error: unable to send email")
+
+def send_invoice(name, receiver, invoice_path):
+    msg = EmailMessage()
+    msg["From"] = "soap-print@cif.rochester.edu"
+    msg["To"] = receiver
+    msg["Subject"] = "Print Submission Received"
+    msg.set_content(f"""
+Dear {name},
+Attached is an invoice of this week's prints.  Thank you again for printing with CIF!""")
+    mime_type, _ = mimetypes.guess_type(invoice_path)
+    if mime_type is None:
+        mime_type = "application/octet-stream"
+    maintype, subtype = mime_type.split("/", 1)
+    with open(invoice_path, "rb") as f:
+        msg.add_attachment(
+            f.read(),
+            maintype=maintype,
+            subtype=subtype,
+            filename=invoice_path.split('/')[-1]
+        )
+    try:
+        with smtplib.SMTP("hermes-vm.cif.rochester.edu", 25) as server:
+            server.send_message(msg)
+        print("Successfully sent email")
+    except smtplib.SMTPException as e:
+        print(e)
+        print("Error: unable to send email")
+
 def authenticate(username, password):
     try:
         ipa_server.login(username, password)
         user = ipa_server.user_find(o_uid=username)['result'][0]
-        return 'admins' in user['memberof_group'] or 'student_org' in user['memberof_group']
+        return 'admins' in user['memberof_group'] or 'student_orgs' in user['memberof_group']
     except Unauthorized:
         return False
 
@@ -69,6 +152,15 @@ def authenticate_admin(username, password):
         return 'admins' in user['memberof_group']
     except Unauthorized:
         return False
+
+def get_name_email(username):
+    try:
+        ipa_server.login(config.ipa.username, config.ipa.password)
+        user = ipa_server.user_find(o_uid=username)['result'][0]
+        return user['givenname'][0], user['mail'][0]
+    except Unauthorized:
+        print("failed")
+        return None, None
 
 def encrypt_password(password):
     return encrypt_string(password, get_mac_address())
@@ -120,6 +212,53 @@ def update_points():
         cursor.execute(f"UPDATE print_points SET points = {min(points + 16, config.print_limitations.max_points)} WHERE netid = '{line[0]}'")
     database.commit()
     database.close()
+
+def send_invoices():
+    database = mariadb.connect(host='localhost', user=config.database.username, password=config.database.password,database=config.database.database)
+    cursor = database.cursor()
+    cursor.execute(f"SELECT * FROM {config.database.table} WHERE date >= NOW() - INTERVAL 7 DAY")
+    output = cursor.fetchall()
+    database.close()
+    invoices = {}
+    for line in output:
+        print(line)
+        org_id = line[1]
+        print_id = line[0]
+        if not org_id in invoices:
+            invoices[org_id] = []
+        if os.path.exists(f"{config.logging.file_storage_path}/{print_id}-print-job"):
+            with open(f"{config.logging.file_storage_path}/{print_id}-print-job") as f:
+                data = json.loads(f.read())
+            for file in data['files']:
+                file_cost = get_print_price(f"{config.logging.file_storage_path}/{file}", data['premium'], data['color'], data['pages'], data['per_page'], data['copies'], data['sided']) / data['copies']
+                new_file_cost = round(100 * file_cost) / 100.0
+                diff = new_file_cost - file_cost
+                file_cost = new_file_cost
+                invoices[org_id].append({'file': file.split('---')[-1], 'quantity': data['copies'], 'rate': file_cost, 'diff': diff})
+        else:
+            with open(f"{BASE_DIR}/queue/{print_id}/print-job") as f:
+                data = json.loads(f.read())
+                for file in data['files']:
+                    file_cost = get_print_price(f"{BASE_DIR}/queue/{print_id}/{file}", data['premium'],data['color'], data['pages'], data['per_page'], data['copies'],data['sided']) / data['copies']
+                    new_file_cost = round(100 * file_cost) / 100.0
+                    diff = new_file_cost - file_cost
+                    file_cost = new_file_cost
+                    invoices[org_id].append({'file': file.split('---')[-1], 'quantity': data['copies'], 'rate': file_cost, 'diff': diff})
+
+    for key in invoices.keys():
+        name, email = get_name_email(key)
+        command = f"{BASE_DIR}/invoice generate --from \"Computer Interest Floor\" --to \"{name}\" "
+        for item in invoices[key]:
+            command += f"--item \"{item['file']}\" --quantity {item['quantity']} --rate {item['rate']} "
+            discount = item['diff'] * item['quantity']
+            if discount:
+                discount = round(100 * discount) / 100.0
+                command += f"--item \"Rounding\" --quantity 1 --rate -{discount} "
+        invoice_name = f"{key}---{str(datetime.now())}.pdf"
+        command += f"--output {BASE_DIR}/invoices/{invoice_name} --id {abs(hash(invoice_name))} --logo ciflogo.png"
+        subprocess.run(command, shell=True)
+        send_invoice(name, email, f"{BASE_DIR}/invoices/{invoice_name}")
+
 
 def scheduler():
     schedule.every().day.at("00:00").do(update_points)
@@ -181,7 +320,10 @@ def update_storage(username):
     return new_files
 
 def update_queue_storage(print_id, file):
-    shutil.move(f"{BASE_DIR}/queue/{print_id}/{file}", f"{config.logging.file_storage_path}/{file}")
+    if file.endswith("print-job"):
+        shutil.move(f"{BASE_DIR}/queue/{print_id}/{file}", f"{config.logging.file_storage_path}/{print_id}-{file}")
+    else:
+        shutil.move(f"{BASE_DIR}/queue/{print_id}/{file}", f"{config.logging.file_storage_path}/{file}")
     current_time = datetime.now()
     files = os.listdir(config.logging.file_storage_path)
     for file in files:
@@ -312,7 +454,7 @@ def mark_complete():
             return redirect("/admin")
         update_queue_storage(id, file)
         if len(os.listdir(f"{BASE_DIR}/queue/{id}")) <= 1:
-            os.remove(f"{BASE_DIR}/queue/{id}/print-job")
+            update_queue_storage(id, f"{BASE_DIR}/queue/{id}/print-job")
             os.rmdir(f"{BASE_DIR}/queue/{id}")
             database = mariadb.connect(host='localhost', user=config.database.username, password=config.database.password,
                                        database=config.database.database)
@@ -344,6 +486,9 @@ def submit_print():
         shutil.move(f"{BASE_DIR}/tmp/{username}/{file}", f"{BASE_DIR}/queue/{print_id}/")
     shutil.move(f"{BASE_DIR}/tmp/{username}/print-job", f"{BASE_DIR}/queue/{print_id}/")
     os.rmdir(f"{BASE_DIR}/tmp/{username}")
+    name, email = get_name_email(username)
+    send_board_notification(name, False)
+    send_org_notification(name, email, False)
     return render_template('success.html', home_url=f"/print?username={username}&d={encrypt_password(password)}")
 
 @app.route('/pricing', methods=['GET'])
@@ -408,8 +553,11 @@ def get_main_page():
                     errs += file.split('/')[-1]
                     errs += "\n"
             if len(errs) > 0:
-                error_output = f"The following files failed to print.  Points have not been deducted.\n{errs}"
+                error_output = f"The following files failed to print.  You will not be charged for failed prints.\n{errs}"
                 return render_template('error.html', home_url=request.full_path, error=error_output)
+            name, email = get_name_email(username)
+            send_board_notification(name, True)
+            send_org_notification(name, email, True)
             return render_template('success.html', home_url=request.full_path)
 
 @app.route('/download/<path:path>', methods=['GET'])
@@ -491,6 +639,7 @@ if __name__ == '__main__':
     config: Config = load_config(path_to_cfg)
     logger = makeLogger(config.logging.log_path)
     ipa_server = ClientMeta(config.ipa.ip, verify_ssl=False)
+    send_invoices()
 
     threading.Thread(daemon=True).start()
     thread = threading.Thread(target=scheduler)
